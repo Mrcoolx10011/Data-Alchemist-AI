@@ -1,0 +1,21 @@
+TaskID,TaskName,Category,Duration,RequiredSkills,PreferredPhases,MaxConcurrent
+T001,AI Model Development,Development,3,Python;Machine Learning,[1,2,3],2
+T002,Frontend Dashboard,Development,2,JavaScript;React,[2,3],3
+T003,Data Pipeline Setup,Infrastructure,2,Python;Data Analysis,[1,4],2
+T004,Mobile App Development,Development,4,Mobile;React Native,[2,3,4,5],1
+T005,API Integration,Development,1,JavaScript;Node.js,[1,3],4
+T006,Cloud Migration,Infrastructure,3,DevOps;AWS,[3,4,5],1
+T007,ML Model Training,AI,4,Python;Machine Learning;Data Science,[1,2,3,4],1
+T008,Security Audit,Security,2,Security;Penetration Testing,[4,5],1
+T009,Database Optimization,Database,1,Database;MySQL,[2,3],2
+T010,Performance Testing,Testing,1,Testing;QA,[3,4],3
+T011,UI/UX Redesign,Design,3,UI/UX;Design;Figma,[1,2,3],2
+T012,Business Requirements,Analysis,2,Business Analysis;Requirements,[1,2],3
+T013,Content Management,Marketing,1,Marketing;Content,[2,3],2
+T014,SEO Optimization,Marketing,1,Marketing;SEO,[3,4],2
+T015,System Architecture,Architecture,3,Cloud Architecture;Microservices,[1,4,5],1
+T016,Code Review Process,Development,1,Python;JavaScript,[1,2,3,4,5],4
+T017,Documentation Update,Documentation,1,Technical Writing,[2,3,4],3
+T018,Load Testing,Testing,2,Testing;Performance Tuning,[4,5],2
+T019,Training Program,Education,2,Training;Knowledge Transfer,[1,2,3],3
+T020,Maintenance Tasks,Maintenance,1,General;Support,[1,2,3,4,5],5
