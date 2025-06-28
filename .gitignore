@@ -18,6 +18,7 @@ dist-ssr
 
 # Markdown files
 *.md
+*.html
 
 # Editor files
 .vscode/*

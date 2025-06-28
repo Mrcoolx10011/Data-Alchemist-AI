@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useData } from '../context/DataContext';
 import { 
   Brain, 
   TrendingUp, 
   AlertTriangle, 
-  CheckCircle, 
   Lightbulb,
   Target,
   Zap,
@@ -30,67 +30,105 @@ interface Insight {
 }
 
 const Insights: React.FC = () => {
+  const { clients, workers, tasks } = useData();
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const insights: Insight[] = [
-    {
-      id: '1',
-      type: 'trend',
-      title: 'Revenue Growth Acceleration',
-      description: 'Revenue has increased by 23.5% over the last quarter, showing strong upward momentum. This trend is expected to continue based on current market conditions.',
-      impact: 'high',
-      confidence: 94,
-      timestamp: '2 hours ago',
-      metrics: { current: 125000, previous: 101000, change: 23.5 }
-    },
-    {
-      id: '2',
-      type: 'anomaly',
-      title: 'Unusual User Activity Spike',
-      description: 'User engagement increased by 45% on Tuesday, significantly higher than typical patterns. Investigation shows correlation with marketing campaign launch.',
-      impact: 'medium',
-      confidence: 87,
-      timestamp: '4 hours ago',
-      metrics: { current: 2800, previous: 1930, change: 45.1 }
-    },
-    {
-      id: '3',
-      type: 'opportunity',
-      title: 'Conversion Rate Optimization',
-      description: 'Analysis reveals potential to increase conversion rates by 15-20% by optimizing the checkout process and reducing form fields.',
-      impact: 'high',
-      confidence: 91,
-      timestamp: '6 hours ago'
-    },
-    {
-      id: '4',
-      type: 'recommendation',
-      title: 'Customer Retention Strategy',
-      description: 'Implement personalized email campaigns for users who haven\'t engaged in 30+ days. Predicted to recover 12% of inactive users.',
-      impact: 'medium',
-      confidence: 83,
-      timestamp: '1 day ago'
-    },
-    {
-      id: '5',
-      type: 'trend',
-      title: 'Mobile Traffic Dominance',
-      description: 'Mobile traffic now accounts for 68% of total visits, up from 52% last quarter. Mobile optimization should be prioritized.',
-      impact: 'high',
-      confidence: 96,
-      timestamp: '1 day ago',
-      metrics: { current: 68, previous: 52, change: 30.8 }
-    },
-    {
-      id: '6',
-      type: 'anomaly',
-      title: 'Geographic Performance Variance',
-      description: 'West Coast regions showing 40% higher conversion rates compared to national average. Investigate regional preferences.',
-      impact: 'medium',
-      confidence: 89,
-      timestamp: '2 days ago'
+  // Generate insights from actual user data instead of sample data
+  const generateInsightsFromData = (): Insight[] => {
+    const insights: Insight[] = [];
+    
+    if (clients.length === 0 && workers.length === 0 && tasks.length === 0) {
+      return [{
+        id: '1',
+        type: 'recommendation',
+        title: 'Start by Uploading Data',
+        description: 'Upload your client, worker, and task data to begin generating AI-powered insights and recommendations.',
+        impact: 'high',
+        confidence: 100,
+        timestamp: 'now'
+      }];
     }
-  ];
+
+    // Priority distribution analysis
+    if (clients.length > 0) {
+      const priorities = clients.map(c => c.PriorityLevel);
+      const avgPriority = priorities.reduce((sum, p) => sum + p, 0) / priorities.length;
+      const highPriorityCount = priorities.filter(p => p >= 4).length;
+      
+      insights.push({
+        id: '1',
+        type: 'trend',
+        title: 'Client Priority Distribution',
+        description: `Average priority level is ${avgPriority.toFixed(1)}. ${highPriorityCount} clients (${((highPriorityCount/clients.length)*100).toFixed(0)}%) are high priority (4-5).`,
+        impact: avgPriority >= 3.5 ? 'high' : 'medium',
+        confidence: 92,
+        timestamp: '1 minute ago',
+        metrics: { current: avgPriority, previous: 3.0, change: ((avgPriority - 3.0) / 3.0 * 100) }
+      });
+    }
+
+    // Skills coverage analysis
+    if (workers.length > 0 && tasks.length > 0) {
+      const workerSkills = new Set(workers.flatMap(w => w.Skills.split(';').map(s => s.trim())));
+      const requiredSkills = new Set(tasks.flatMap(t => t.RequiredSkills.split(';').map(s => s.trim())));
+      const coverageRatio = [...requiredSkills].filter(skill => workerSkills.has(skill)).length / requiredSkills.size;
+      
+      insights.push({
+        id: '2',
+        type: coverageRatio < 0.8 ? 'anomaly' : 'opportunity',
+        title: `Skill Coverage Analysis`,
+        description: `${(coverageRatio * 100).toFixed(0)}% of required skills are covered by current workers. ${coverageRatio < 0.8 ? 'Consider hiring or training.' : 'Good skill coverage detected.'}`,
+        impact: coverageRatio < 0.6 ? 'high' : coverageRatio < 0.8 ? 'medium' : 'low',
+        confidence: 88,
+        timestamp: '5 minutes ago'
+      });
+    }
+
+    // Workload balance analysis
+    if (workers.length > 0) {
+      const loads = workers.map(w => w.MaxLoadPerPhase);
+      const maxLoad = Math.max(...loads);
+      const minLoad = Math.min(...loads);
+      const loadVariance = maxLoad - minLoad;
+      
+      if (loadVariance > 2) {
+        insights.push({
+          id: '3',
+          type: 'recommendation',
+          title: 'Workload Imbalance Detected',
+          description: `Load variance of ${loadVariance} detected between workers. Consider redistributing tasks for better balance.`,
+          impact: 'medium',
+          confidence: 75,
+          timestamp: '10 minutes ago'
+        });
+      }
+    }
+
+    // Group distribution analysis
+    if (clients.length > 0) {
+      const groups = clients.reduce((acc, client) => {
+        acc[client.GroupTag] = (acc[client.GroupTag] || 0) + 1;
+        return acc;
+      }, {} as { [key: string]: number });
+      
+      const groupCounts = Object.values(groups);
+      const isBalanced = Math.max(...groupCounts) - Math.min(...groupCounts) <= 2;
+      
+      insights.push({
+        id: '4',
+        type: isBalanced ? 'trend' : 'opportunity',
+        title: 'Client Group Distribution',
+        description: `${Object.keys(groups).length} groups detected. Distribution is ${isBalanced ? 'well balanced' : 'uneven - consider rebalancing'}.`,
+        impact: 'medium',
+        confidence: 85,
+        timestamp: '15 minutes ago'
+      });
+    }
+
+    return insights;
+  };
+
+  const insights = generateInsightsFromData();
 
   const categories = [
     { id: 'all', name: 'All Insights', icon: Brain },

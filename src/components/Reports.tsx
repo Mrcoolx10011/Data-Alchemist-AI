@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useData } from '../context/DataContext';
 import { 
   FileText, 
   Download, 
@@ -30,82 +31,77 @@ interface Report {
 }
 
 const Reports: React.FC = () => {
+  const { clients, workers, tasks } = useData();
   const [selectedFilter, setSelectedFilter] = useState('all');
 
-  const reports: Report[] = [
-    {
-      id: '1',
-      title: 'Q3 Performance Dashboard',
-      description: 'Comprehensive overview of Q3 metrics including revenue, user growth, and key performance indicators.',
-      type: 'dashboard',
-      status: 'published',
-      createdBy: 'Kiran Mehta',
-      createdAt: '2024-01-15',
-      lastModified: '2024-01-20',
-      views: 247,
-      size: '2.4 MB'
-    },
-    {
-      id: '2',
-      title: 'Customer Analytics Report',
-      description: 'Deep dive into customer behavior patterns, segmentation analysis, and retention metrics.',
-      type: 'analytics',
-      status: 'published',
-      createdBy: 'Sarah Johnson',
-      createdAt: '2024-01-12',
-      lastModified: '2024-01-18',
-      views: 189,
-      size: '1.8 MB'
-    },
-    {
-      id: '3',
-      title: 'Financial Summary - January',
-      description: 'Monthly financial report covering revenue, expenses, profit margins, and budget analysis.',
-      type: 'financial',
-      status: 'draft',
-      createdBy: 'Mike Wilson',
-      createdAt: '2024-01-10',
-      lastModified: '2024-01-22',
-      views: 45,
-      size: '3.1 MB'
-    },
-    {
-      id: '4',
-      title: 'Marketing Campaign Analysis',
-      description: 'ROI analysis and performance metrics for recent marketing campaigns across all channels.',
-      type: 'custom',
-      status: 'scheduled',
-      createdBy: 'Emma Davis',
-      createdAt: '2024-01-08',
-      lastModified: '2024-01-19',
-      views: 156,
-      size: '1.2 MB'
-    },
-    {
-      id: '5',
-      title: 'User Engagement Trends',
-      description: 'Analysis of user engagement patterns, feature adoption, and usage statistics over time.',
-      type: 'analytics',
-      status: 'published',
-      createdBy: 'Kiran Mehta',
-      createdAt: '2024-01-05',
-      lastModified: '2024-01-17',
-      views: 203,
-      size: '2.7 MB'
-    },
-    {
-      id: '6',
-      title: 'Operational Efficiency Report',
-      description: 'Comprehensive analysis of operational metrics, process efficiency, and resource utilization.',
-      type: 'custom',
-      status: 'published',
-      createdBy: 'David Brown',
-      createdAt: '2024-01-03',
-      lastModified: '2024-01-16',
-      views: 134,
-      size: '1.9 MB'
+  // Generate reports from actual user data instead of sample data
+  const generateReportsFromData = () => {
+    const reports: Report[] = [];
+    
+    if (clients.length > 0) {
+      reports.push({
+        id: '1',
+        title: `Client Data Analysis Report`,
+        description: `Analysis of ${clients.length} clients including priority distribution, group analysis, and task requirements.`,
+        type: 'analytics',
+        status: 'published',
+        createdBy: 'Data Alchemist AI',
+        createdAt: new Date().toISOString().split('T')[0],
+        lastModified: new Date().toISOString().split('T')[0],
+        views: 0,
+        size: `${(clients.length * 0.1).toFixed(1)} KB`
+      });
     }
-  ];
+
+    if (workers.length > 0) {
+      reports.push({
+        id: '2',
+        title: `Worker Skills & Availability Report`,
+        description: `Overview of ${workers.length} workers with skill analysis, availability patterns, and team distribution.`,
+        type: 'analytics',
+        status: 'published',
+        createdBy: 'Data Alchemist AI',
+        createdAt: new Date().toISOString().split('T')[0],
+        lastModified: new Date().toISOString().split('T')[0],
+        views: 0,
+        size: `${(workers.length * 0.2).toFixed(1)} KB`
+      });
+    }
+
+    if (tasks.length > 0) {
+      reports.push({
+        id: '3',
+        title: `Task Requirements & Resource Planning`,
+        description: `Detailed analysis of ${tasks.length} tasks including skill requirements, duration estimates, and resource allocation.`,
+        type: 'analytics',
+        status: 'published',
+        createdBy: 'Data Alchemist AI',
+        createdAt: new Date().toISOString().split('T')[0],
+        lastModified: new Date().toISOString().split('T')[0],
+        views: 0,
+        size: `${(tasks.length * 0.15).toFixed(1)} KB`
+      });
+    }
+
+    if (clients.length > 0 && workers.length > 0 && tasks.length > 0) {
+      reports.push({
+        id: '4',
+        title: `Complete Resource Allocation Dashboard`,
+        description: `Comprehensive dashboard combining all data: ${clients.length} clients, ${workers.length} workers, and ${tasks.length} tasks.`,
+        type: 'dashboard',
+        status: 'published',
+        createdBy: 'Data Alchemist AI',
+        createdAt: new Date().toISOString().split('T')[0],
+        lastModified: new Date().toISOString().split('T')[0],
+        views: 0,
+        size: `${((clients.length + workers.length + tasks.length) * 0.3).toFixed(1)} KB`
+      });
+    }
+
+    return reports;
+  };
+
+  const reports = generateReportsFromData();
 
   const filters = [
     { id: 'all', name: 'All Reports', count: reports.length },

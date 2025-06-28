@@ -10,7 +10,6 @@ import {
   FileText,
   Users,
   Briefcase,
-  Download,
   Brain,
   RefreshCw,
   AlertTriangle
@@ -246,49 +245,7 @@ const DataUpload: React.FC = () => {
     }
   };
 
-  const loadSampleData = async () => {
-    setIsLoading(true);
-    
-    try {
-      // Load sample clients
-      const clientsResponse = await fetch('/samples/clients.csv');
-      const clientsText = await clientsResponse.text();
-      Papa.parse(clientsText, {
-        header: true,
-        complete: (results) => {
-          setClients(results.data.slice(0, -1) as Client[]);
-        }
-      });
-
-      // Load sample workers
-      const workersResponse = await fetch('/samples/workers.csv');
-      const workersText = await workersResponse.text();
-      Papa.parse(workersText, {
-        header: true,
-        complete: (results) => {
-          setWorkers(results.data.slice(0, -1) as Worker[]);
-        }
-      });
-
-      // Load sample tasks
-      const tasksResponse = await fetch('/samples/tasks.csv');
-      const tasksText = await tasksResponse.text();
-      Papa.parse(tasksText, {
-        header: true,
-        complete: (results) => {
-          setTasks(results.data.slice(0, -1) as Task[]);
-          setTimeout(() => {
-            runValidation();
-            setIsLoading(false);
-          }, 500);
-        }
-      });
-
-    } catch (error) {
-      console.error('Error loading sample data:', error);
-      setIsLoading(false);
-    }
-  };
+  // Sample data loading removed - app now works with uploaded data only
 
   const getEntityIcon = (entityType: string) => {
     switch (entityType) {
@@ -310,33 +267,25 @@ const DataUpload: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header - Mobile Optimized */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl shadow-lg p-6"
+        className="bg-white rounded-xl shadow-lg p-4 md:p-6"
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0">
           <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-3 rounded-lg">
-              <Upload className="h-6 w-6 text-white" />
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-2 md:p-3 rounded-lg">
+              <Upload className="h-5 w-5 md:h-6 md:w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Data Ingestion Hub</h1>
-              <p className="text-gray-600">Upload CSV or Excel files with AI-powered parsing</p>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">Data Ingestion Hub</h1>
+              <p className="text-sm md:text-base text-gray-600">Upload CSV or Excel files with AI-powered parsing</p>
             </div>
           </div>
-          
-          <button
-            onClick={loadSampleData}
-            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200"
-          >
-            <Download className="h-4 w-4" />
-            <span>Load Sample Data</span>
-          </button>
         </div>
 
-        {/* AI Processing Indicator */}
+        {/* AI Processing Indicator - Mobile Optimized */}
         <AnimatePresence>
           {aiProcessing && (
             <motion.div
@@ -346,34 +295,34 @@ const DataUpload: React.FC = () => {
               className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg"
             >
               <div className="flex items-center space-x-2">
-                <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
-                <span className="text-blue-800 font-medium">AI analyzing file structure and mapping columns...</span>
+                <RefreshCw className="h-4 w-4 text-blue-600 animate-spin flex-shrink-0" />
+                <span className="text-sm md:text-base text-blue-800 font-medium">AI analyzing file structure and mapping columns...</span>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Validation Summary */}
+        {/* Validation Summary - Mobile Optimized */}
         {validationErrors.length > 0 && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mb-4 p-4 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg"
+            className="mb-4 p-3 md:p-4 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg"
           >
             <div className="flex items-center space-x-2 mb-2">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-              <span className="font-semibold text-red-800">
+              <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-red-600 flex-shrink-0" />
+              <span className="text-sm md:text-base font-semibold text-red-800">
                 {validationErrors.filter(e => e.type === 'error').length} Errors, {validationErrors.filter(e => e.type === 'warning').length} Warnings
               </span>
             </div>
-            <div className="text-sm text-red-700">
+            <div className="text-xs md:text-sm text-red-700">
               Fix validation issues before proceeding with rule configuration.
             </div>
           </motion.div>
         )}
       </motion.div>
 
-      {/* Upload Area */}
+      {/* Upload Area - Mobile Optimized */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -382,7 +331,7 @@ const DataUpload: React.FC = () => {
       >
         <div
           {...getRootProps()}
-          className={`p-8 border-2 border-dashed transition-all duration-300 cursor-pointer ${
+          className={`p-6 md:p-8 border-2 border-dashed transition-all duration-300 cursor-pointer ${
             isDragActive 
               ? 'border-indigo-500 bg-indigo-50' 
               : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'
@@ -390,20 +339,20 @@ const DataUpload: React.FC = () => {
         >
           <input {...getInputProps()} />
           <div className="text-center">
-            <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+            <div className={`mx-auto w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mb-4 ${
               isDragActive ? 'bg-indigo-100' : 'bg-gray-100'
             }`}>
-              <Upload className={`h-8 w-8 ${isDragActive ? 'text-indigo-600' : 'text-gray-600'}`} />
+              <Upload className={`h-6 w-6 md:h-8 md:w-8 ${isDragActive ? 'text-indigo-600' : 'text-gray-600'}`} />
             </div>
             
             {isDragActive ? (
-              <p className="text-lg text-indigo-600 font-medium">Drop files here to upload</p>
+              <p className="text-base md:text-lg text-indigo-600 font-medium">Drop files here to upload</p>
             ) : (
               <div>
-                <p className="text-lg text-gray-600 mb-2">
+                <p className="text-base md:text-lg text-gray-600 mb-2">
                   Drop your CSV or Excel files here, or <span className="text-indigo-600 font-medium">browse</span>
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-xs md:text-sm text-gray-500">
                   Supports: clients.csv, workers.csv, tasks.csv, .xlsx files
                 </p>
               </div>

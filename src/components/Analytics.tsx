@@ -1,20 +1,14 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   BarChart3, 
   TrendingUp, 
   PieChart, 
-  LineChart, 
-  Filter,
-  Download,
-  Share,
-  RefreshCw
+  Users,
+  Briefcase,
+  Activity
 } from 'lucide-react';
 import { 
-  LineChart as RechartsLineChart, 
-  Line, 
-  AreaChart, 
-  Area, 
   BarChart, 
   Bar, 
   PieChart as RechartsPieChart, 
@@ -24,130 +18,204 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer,
-  ScatterChart,
-  Scatter
+  ResponsiveContainer
 } from 'recharts';
 import { useData } from '../context/DataContext';
 
 const Analytics: React.FC = () => {
-  const { data } = useData();
-  const [selectedChart, setSelectedChart] = useState('line');
-  const [selectedMetric, setSelectedMetric] = useState('revenue');
+  const { clients, workers, tasks } = useData();
 
-  // Sample analytics data
-  const analyticsData = [
-    { month: 'Jan', revenue: 65000, users: 1200, conversion: 3.2, satisfaction: 4.2 },
-    { month: 'Feb', revenue: 78000, users: 1400, conversion: 3.5, satisfaction: 4.3 },
-    { month: 'Mar', revenue: 82000, users: 1600, conversion: 3.8, satisfaction: 4.1 },
-    { month: 'Apr', revenue: 95000, users: 1800, conversion: 4.1, satisfaction: 4.4 },
-    { month: 'May', revenue: 110000, users: 2100, conversion: 4.3, satisfaction: 4.5 },
-    { month: 'Jun', revenue: 125000, users: 2400, conversion: 4.6, satisfaction: 4.6 },
-    { month: 'Jul', revenue: 135000, users: 2600, conversion: 4.8, satisfaction: 4.7 },
-    { month: 'Aug', revenue: 142000, users: 2800, conversion: 5.1, satisfaction: 4.8 },
-  ];
+  // Generate analytics from user data only
+  const analyticsData = useMemo(() => {
+    if (!clients.length && !workers.length && !tasks.length) {
+      return {
+        priorityDistribution: [],
+        groupDistribution: [],
+        workerSkills: [],
+        taskCategories: [],
+        keyMetrics: {
+          totalClients: 0,
+          totalWorkers: 0,
+          totalTasks: 0,
+          avgPriority: 0
+        }
+      };
+    }
 
-  const categoryData = [
-    { name: 'Product Sales', value: 45, color: '#3B82F6' },
-    { name: 'Services', value: 30, color: '#8B5CF6' },
-    { name: 'Subscriptions', value: 15, color: '#10B981' },
-    { name: 'Other', value: 10, color: '#F59E0B' },
-  ];
+    // Priority distribution from clients
+    const priorityDistribution = [1, 2, 3, 4, 5].map(priority => ({
+      priority: `Priority ${priority}`,
+      count: clients.filter(c => c.PriorityLevel === priority).length,
+      color: priority === 1 ? '#EF4444' : priority === 2 ? '#F97316' : priority === 3 ? '#EAB308' : priority === 4 ? '#22C55E' : '#3B82F6'
+    }));
 
-  const scatterData = [
-    { x: 1200, y: 65000, z: 3.2 },
-    { x: 1400, y: 78000, z: 3.5 },
-    { x: 1600, y: 82000, z: 3.8 },
-    { x: 1800, y: 95000, z: 4.1 },
-    { x: 2100, y: 110000, z: 4.3 },
-    { x: 2400, y: 125000, z: 4.6 },
-    { x: 2600, y: 135000, z: 4.8 },
-    { x: 2800, y: 142000, z: 5.1 },
-  ];
+    // Group distribution from clients
+    const groupCounts = clients.reduce((acc, client) => {
+      acc[client.GroupTag] = (acc[client.GroupTag] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
 
-  const chartTypes = [
-    { id: 'line', name: 'Line Chart', icon: LineChart },
-    { id: 'area', name: 'Area Chart', icon: TrendingUp },
-    { id: 'bar', name: 'Bar Chart', icon: BarChart3 },
-    { id: 'pie', name: 'Pie Chart', icon: PieChart },
-  ];
+    const groupDistribution = Object.entries(groupCounts).map(([group, count], index) => ({
+      group,
+      count,
+      color: ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'][index % 5]
+    }));
 
-  const metrics = [
-    { id: 'revenue', name: 'Revenue', color: '#3B82F6' },
-    { id: 'users', name: 'Users', color: '#8B5CF6' },
-    { id: 'conversion', name: 'Conversion Rate', color: '#10B981' },
-    { id: 'satisfaction', name: 'Satisfaction', color: '#F59E0B' },
-  ];
+    // Worker skills distribution
+    const skillCounts = workers.reduce((acc, worker) => {
+      if (worker.Skills) {
+        const skills = worker.Skills.split(';');
+        skills.forEach(skill => {
+          const cleanSkill = skill.trim();
+          acc[cleanSkill] = (acc[cleanSkill] || 0) + 1;
+        });
+      }
+      return acc;
+    }, {} as Record<string, number>);
 
-  const renderChart = () => {
-    const currentMetric = metrics.find(m => m.id === selectedMetric);
-    
-    switch (selectedChart) {
-      case 'line':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <RechartsLineChart data={analyticsData}>
+    const workerSkills = Object.entries(skillCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([skill, count], index) => ({
+        skill,
+        count,
+        color: ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#8B5A2B', '#EC4899'][index]
+      }));
+
+    // Task categories
+    const categoryCounts = tasks.reduce((acc, task) => {
+      acc[task.Category] = (acc[task.Category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const taskCategories = Object.entries(categoryCounts).map(([category, count], index) => ({
+      category,
+      count,
+      color: ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4'][index % 6]
+    }));
+
+    const avgPriority = clients.length > 0 
+      ? clients.reduce((sum, c) => sum + c.PriorityLevel, 0) / clients.length 
+      : 0;
+
+    return {
+      priorityDistribution,
+      groupDistribution,
+      workerSkills,
+      taskCategories,
+      keyMetrics: {
+        totalClients: clients.length,
+        totalWorkers: workers.length,
+        totalTasks: tasks.length,
+        avgPriority: Math.round(avgPriority * 10) / 10
+      }
+    };
+  }, [clients, workers, tasks]);
+
+  // Show empty state if no data
+  if (!clients.length && !workers.length && !tasks.length) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="text-center">
+            <Activity className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Data for Analytics</h3>
+            <p className="text-gray-600 mb-4">
+              Upload your data to see detailed analytics and insights.
+            </p>
+            <div className="text-sm text-gray-500">
+              Analytics will show:
+              <br />• Priority distribution across clients
+              <br />• Group and category breakdowns
+              <br />• Skill distribution among workers
+              <br />• Task category analysis
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl shadow-lg p-6"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Clients</p>
+              <p className="text-2xl font-bold text-gray-900">{analyticsData.keyMetrics.totalClients}</p>
+            </div>
+            <Users className="h-8 w-8 text-blue-600" />
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-xl shadow-lg p-6"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Workers</p>
+              <p className="text-2xl font-bold text-gray-900">{analyticsData.keyMetrics.totalWorkers}</p>
+            </div>
+            <Briefcase className="h-8 w-8 text-green-600" />
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-xl shadow-lg p-6"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Tasks</p>
+              <p className="text-2xl font-bold text-gray-900">{analyticsData.keyMetrics.totalTasks}</p>
+            </div>
+            <Activity className="h-8 w-8 text-purple-600" />
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-xl shadow-lg p-6"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Avg Priority</p>
+              <p className="text-2xl font-bold text-gray-900">{analyticsData.keyMetrics.avgPriority}</p>
+            </div>
+            <TrendingUp className="h-8 w-8 text-orange-600" />
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Priority Distribution Chart */}
+      {analyticsData.priorityDistribution.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white rounded-xl shadow-lg p-6"
+        >
+          <div className="flex items-center mb-6">
+            <BarChart3 className="h-6 w-6 text-blue-600 mr-3" />
+            <h3 className="text-xl font-bold text-gray-900">Priority Distribution</h3>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={analyticsData.priorityDistribution}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" stroke="#6b7280" />
-              <YAxis stroke="#6b7280" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'white', 
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey={selectedMetric} 
-                stroke={currentMetric?.color} 
-                strokeWidth={3}
-                dot={{ fill: currentMetric?.color, strokeWidth: 2, r: 6 }}
-                activeDot={{ r: 8, stroke: currentMetric?.color, strokeWidth: 2 }}
-              />
-            </RechartsLineChart>
-          </ResponsiveContainer>
-        );
-      
-      case 'area':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <AreaChart data={analyticsData}>
-              <defs>
-                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={currentMetric?.color} stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor={currentMetric?.color} stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" stroke="#6b7280" />
-              <YAxis stroke="#6b7280" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'white', 
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                }}
-              />
-              <Area 
-                type="monotone" 
-                dataKey={selectedMetric} 
-                stroke={currentMetric?.color} 
-                strokeWidth={3}
-                fill="url(#areaGradient)" 
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        );
-      
-      case 'bar':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={analyticsData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" stroke="#6b7280" />
+              <XAxis dataKey="priority" stroke="#6b7280" />
               <YAxis stroke="#6b7280" />
               <Tooltip 
                 contentStyle={{ 
@@ -158,29 +226,43 @@ const Analytics: React.FC = () => {
                 }}
               />
               <Bar 
-                dataKey={selectedMetric} 
-                fill={currentMetric?.color}
+                dataKey="count" 
                 radius={[4, 4, 0, 0]}
-              />
+              >
+                {analyticsData.priorityDistribution.map((entry, index) => (
+                  <Cell key={`priority-${index}`} fill={entry.color} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
-        );
-      
-      case 'pie':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
+        </motion.div>
+      )}
+
+      {/* Group Distribution Chart */}
+      {analyticsData.groupDistribution.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white rounded-xl shadow-lg p-6"
+        >
+          <div className="flex items-center mb-6">
+            <PieChart className="h-6 w-6 text-purple-600 mr-3" />
+            <h3 className="text-xl font-bold text-gray-900">Group Distribution</h3>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
             <RechartsPieChart>
               <Pie
-                data={categoryData}
+                data={analyticsData.groupDistribution}
                 cx="50%"
                 cy="50%"
-                innerRadius={80}
-                outerRadius={140}
-                paddingAngle={5}
-                dataKey="value"
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="count"
+                label={({ group, count }) => `${group}: ${count}`}
               >
-                {categoryData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                {analyticsData.groupDistribution.map((entry, index) => (
+                  <Cell key={`group-${index}`} fill={entry.color} />
                 ))}
               </Pie>
               <Tooltip 
@@ -193,229 +275,86 @@ const Analytics: React.FC = () => {
               />
             </RechartsPieChart>
           </ResponsiveContainer>
-        );
-      
-      default:
-        return null;
-    }
-  };
+        </motion.div>
+      )}
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg">
-              <BarChart3 className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Analytics Dashboard</h1>
-              <p className="text-gray-600">Visualize and analyze your data with interactive charts</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export</span>
-            </motion.button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Controls */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.5 }}
-        className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">Chart Type:</span>
-            </div>
-            <div className="flex space-x-2">
-              {chartTypes.map((chart) => {
-                const Icon = chart.icon;
-                return (
-                  <motion.button
-                    key={chart.id}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedChart(chart.id)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all ${
-                      selectedChart === chart.id
-                        ? 'bg-purple-500 text-white shadow-lg'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="text-sm">{chart.name}</span>
-                  </motion.button>
-                );
-              })}
-            </div>
-          </div>
-
-          {selectedChart !== 'pie' && (
-            <div className="flex items-center space-x-4">
-              <span className="text-sm font-medium text-gray-700">Metric:</span>
-              <select
-                value={selectedMetric}
-                onChange={(e) => setSelectedMetric(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                {metrics.map((metric) => (
-                  <option key={metric.id} value={metric.id}>
-                    {metric.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-      </motion.div>
-
-      {/* Main Chart */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-        className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-800">
-            {chartTypes.find(c => c.id === selectedChart)?.name} - {metrics.find(m => m.id === selectedMetric)?.name}
-          </h3>
-          <div className="flex items-center space-x-2">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Share className="w-4 h-4" />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Download className="w-4 h-4" />
-            </motion.button>
-          </div>
-        </div>
-        {renderChart()}
-      </motion.div>
-
-      {/* Secondary Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Correlation Analysis */}
+      {/* Worker Skills Chart */}
+      {analyticsData.workerSkills.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="bg-white rounded-xl shadow-lg p-6"
         >
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Users vs Revenue Correlation</h3>
+          <div className="flex items-center mb-6">
+            <Users className="h-6 w-6 text-green-600 mr-3" />
+            <h3 className="text-xl font-bold text-gray-900">Top Worker Skills</h3>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
-            <ScatterChart data={scatterData}>
+            <BarChart data={analyticsData.workerSkills} layout="horizontal">
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="x" name="Users" stroke="#6b7280" />
-              <YAxis dataKey="y" name="Revenue" stroke="#6b7280" />
+              <XAxis type="number" stroke="#6b7280" />
+              <YAxis dataKey="skill" type="category" stroke="#6b7280" width={100} />
               <Tooltip 
-                cursor={{ strokeDasharray: '3 3' }}
                 contentStyle={{ 
                   backgroundColor: 'white', 
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }}
-                formatter={(value, name) => [
-                  name === 'x' ? `${value} users` : `$${value.toLocaleString()}`,
-                  name === 'x' ? 'Users' : 'Revenue'
-                ]}
               />
-              <Scatter dataKey="y" fill="#8B5CF6" />
-            </ScatterChart>
+              <Bar 
+                dataKey="count" 
+                radius={[0, 4, 4, 0]}
+              >
+                {analyticsData.workerSkills.map((entry, index) => (
+                  <Cell key={`skill-${index}`} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         </motion.div>
+      )}
 
-        {/* Performance Metrics */}
+      {/* Task Categories Chart */}
+      {analyticsData.taskCategories.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="bg-white rounded-xl shadow-lg p-6"
         >
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Key Performance Indicators</h3>
-          <div className="space-y-4">
-            {[
-              { label: 'Revenue Growth', value: '+23.5%', color: 'text-green-600', bg: 'bg-green-100' },
-              { label: 'User Acquisition', value: '+18.2%', color: 'text-blue-600', bg: 'bg-blue-100' },
-              { label: 'Conversion Rate', value: '+12.8%', color: 'text-purple-600', bg: 'bg-purple-100' },
-              { label: 'Customer Satisfaction', value: '+8.4%', color: 'text-orange-600', bg: 'bg-orange-100' },
-            ].map((kpi, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 + index * 0.1, duration: 0.3 }}
-                className="flex items-center justify-between p-3 rounded-lg border border-gray-100"
+          <div className="flex items-center mb-6">
+            <Activity className="h-6 w-6 text-orange-600 mr-3" />
+            <h3 className="text-xl font-bold text-gray-900">Task Categories</h3>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <RechartsPieChart>
+              <Pie
+                data={analyticsData.taskCategories}
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="count"
+                label={({ category, count }) => `${category}: ${count}`}
               >
-                <span className="font-medium text-gray-700">{kpi.label}</span>
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${kpi.color} ${kpi.bg}`}>
-                  {kpi.value}
-                </span>
-              </motion.div>
-            ))}
-          </div>
+                {analyticsData.taskCategories.map((entry, index) => (
+                  <Cell key={`category-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'white', 
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                }}
+              />
+            </RechartsPieChart>
+          </ResponsiveContainer>
         </motion.div>
-      </div>
-
-      {/* Data Summary */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-        className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
-      >
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Data Summary</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600 mb-1">8</div>
-            <div className="text-sm text-gray-600">Data Points</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600 mb-1">4</div>
-            <div className="text-sm text-gray-600">Metrics Tracked</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600 mb-1">100%</div>
-            <div className="text-sm text-gray-600">Data Quality</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600 mb-1">Live</div>
-            <div className="text-sm text-gray-600">Update Status</div>
-          </div>
-        </div>
-      </motion.div>
+      )}
     </div>
   );
 };

@@ -1,3 +1,56 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Hide copyright banners */
+@layer utilities {
+  /* Hide any element with copyright banner classes */
+  .bg-gradient-to-r.from-red-600.to-red-700.rounded-xl.p-6.text-white.border-2.border-red-800.shadow-lg {
+    display: none !important;
+  }
+  
+  /* Hide elements containing copyright text */
+  [class*="text-red-"] div:has(h3:contains("COPYRIGHT NOTICE")) {
+    display: none !important;
+  }
+  
+  /* Hide any motion.div with red gradient and copyright content */
+  div[class*="bg-gradient-to-r"][class*="from-red-6"][class*="to-red-7"] {
+    display: none !important;
+  }
+  
+  /* Hide any element containing specific copyright text */
+  div:has(h3:contains("⚠️ COPYRIGHT NOTICE")) {
+    display: none !important;
+  }
+  
+  /* Hide elements with "STRICTLY PROHIBITED" text */
+  div:has(*:contains("STRICTLY PROHIBITED")) {
+    display: none !important;
+  }
+  
+  /* Hide elements with Kiran Mehta copyright text */
+  div:has(*:contains("© 2025 Kiran Mehta")) {
+    display: none !important;
+  }
+}
+
+/* Hide any copyright/legal banners using various selectors */
+[class*="bg-gradient-to-r"][class*="from-red-6"][class*="to-red-7"],
+[class*="border-l-4"][class*="border-red-8"],
+[class*="bg-red-600"],
+[class*="bg-red-700"],
+div:has-text("🚨"),
+div:has-text("⚠️"),
+div:has-text("LEGAL NOTICE"),
+div:has-text("COPYRIGHT PROTECTION"),
+div:has-text("COMMERCIAL USE STRICTLY PROHIBITED"),
+div:has-text("kiran100112@gmail.com"),
+div:has-text("Data Alchemist AI application"),
+div:has-text("exclusive intellectual property") {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
